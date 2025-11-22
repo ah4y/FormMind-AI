@@ -1,0 +1,18 @@
+# Core framework and database
+streamlit>=1.28.0
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+
+# Testing and development
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Text processing for AI insights
+nltk>=3.8
+
+# Utilities
+python-dotenv>=1.0.0
+bcrypt>=4.0.0
+
+# Optional: For better datetime handling
+python-dateutil>=2.8.0
