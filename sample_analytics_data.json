@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "description": "Sample analytics data for testing FormMind AI insights and analytics functions",
+    "created": "2025-11-22",
+    "teammate_b": "Analytics & AI Insights Testing",
+    "test_scenarios": [
+      "Keyword extraction with e-commerce feedback",
+      "Sentiment analysis across different response types",
+      "Length statistics for engagement measurement",
+      "Multiple choice distributions",
+      "Numeric statistics (ratings, scores)",
+      "Mixed response types"
+    ]
+  },
+  "sample_text_responses": {
+    "product_feedback": [
+      "Excellent quality and fast shipping!",
+      "Good product but packaging could be better",
+      "Amazing value for money, highly recommended",
+      "Terrible quality, waste of money",
+      "Great product, arrived damaged",
+      "I love this item, exceeded expectations",
+      "Poor customer service experience",
+      "Product is decent but overpriced",
+      "Outstanding! Best purchase ever",
+      "Disappointed with the result",
+      "Fantastic quality and great customer support",
+      "Not as described in the listing",
+      "Perfect for my needs, very happy",
+      "Horrible product, don't recommend",
+      "Love it! Ordering again next month"
+    ],
+    "service_experience": [
+      "The customer service team was incredibly helpful and responsive",
+      "Very helpful staff, great experience overall",
+      "Rude representatives, poor handling",
+      "Fast and professional service, no complaints",
+      "Good service but took too long to resolve",
+      "Amazing support team, they really care",
+      "Disappointed with service quality",
+      "Excellent response time and solutions",
+      "Frustrated with the lack of support",
+      "Best service I've experienced",
+      "Adequate but could be better",
+      "Outstanding help and support",
+      "Poor communication throughout the process",
+      "Great help from their team members",
+      "Terrible experience, won't return"
+    ],
+    "survey_responses": [
+      "The application is very user-friendly and intuitive",
+      "Interface could use some improvements",
+      "Love the clean design and easy navigation",
+      "Too complicated, hard to find features",
+      "Perfect balance of features and simplicity",
+      "Fantastic experience from start to finish",
+      "Some bugs encountered during testing",
+      "Excellent implementation of requested features",
+      "Needs better documentation",
+      "Outstanding work on the new update",
+      "Good but missing some important features",
+      "Exceptional quality and attention to detail",
+      "Disappointing performance issues",
+      "Great job on the latest version",
+      "Could definitely be improved"
+    ]
+  },
+  "sample_numeric_responses": {
+    "ratings_5_point": [
+      5, 4, 5, 3, 5, 4, 2, 5, 4, 5, 4, 5, 1, 5, 4,
+      5, 5, 4, 3, 4, 5, 5, 4, 2, 5, 4, 5, 4, 5, 3
+    ],
+    "ratings_distribution": {
+      "5": 12,
+      "4": 12,
+      "3": 3,
+      "2": 2,
+      "1": 1
+    },
+    "numeric_scores": [
+      87.5, 92.3, 78.6, 95.1, 88.9, 76.4, 89.2, 91.5,
+      82.1, 93.7, 85.6, 90.2, 79.8, 94.4, 86.3
+    ],
+    "time_in_minutes": [
+      5, 12, 3, 25, 8, 15, 4, 18, 6, 22, 9, 14, 7, 20, 11,
+      13, 5, 16, 8, 19, 6, 12, 4, 21, 10, 17, 7, 14, 9, 18
+    ]
+  },
+  "sample_choice_responses": {
+    "single_select": {
+      "Very Satisfied": 12,
+      "Satisfied": 15,
+      "Neutral": 8,
+      "Dissatisfied": 3,
+      "Very Dissatisfied": 2
+    },
+    "multiple_select": {
+      "Easy to use": 20,
+      "Good value": 16,
+      "High quality": 18,
+      "Good design": 14,
+      "Reliable": 17,
+      "Fast shipping": 9,
+      "Good support": 11
+    },
+    "programming_languages": {
+      "Python": 18,
+      "JavaScript": 15,
+      "Java": 12,
+      "Go": 8,
+      "Rust": 6,
+      "TypeScript": 14,
+      "C++": 5
+    },
+    "browser_usage": {
+      "Chrome": 22,
+      "Firefox": 8,
+      "Safari": 7,
+      "Edge": 5,
+      "Other": 2
+    }
+  },
+  "test_cases": {
+    "sentiment_analysis_scenarios": {
+      "highly_positive": [
+        "I absolutely love this product! It's amazing and fantastic!",
+        "Excellent quality, best purchase ever made!",
+        "Outstanding! Exceeded all expectations!"
+      ],
+      "highly_negative": [
+        "Terrible waste of money. Horrible quality.",
+        "Awful experience. Very disappointed and angry.",
+        "Bad product. Hate it. Never again."
+      ],
+      "mixed_sentiment": [
+        "Good product but terrible customer service",
+        "Love the design but hate the price",
+        "Great quality yet disappointing delivery"
+      ],
+      "neutral": [
+        "The product arrived",
+        "It works as intended",
+        "It functions",
+        "Normal product"
+      ]
+    },
+    "keyword_extraction_expected": {
+      "input": [
+        "Great quality and excellent customer service",
+        "High quality product with amazing support",
+        "Excellent service and quality workmanship"
+      ],
+      "expected_top_keywords": [
+        {"word": "quality", "count": 3},
+        {"word": "excellent", "count": 2},
+        {"word": "service", "count": 2},
+        {"word": "amazing", "count": 1},
+        {"word": "customer", "count": 1}
+      ]
+    },
+    "length_stats_scenarios": {
+      "short_responses": {
+        "responses": ["Good", "OK", "Fine", "Yes", "Great"],
+        "expected": {
+          "count": 5,
+          "avg_length": 1.0,
+          "min_length": 1,
+          "max_length": 1
+        }
+      },
+      "long_responses": {
+        "responses": [
+          "This is a detailed response with multiple sentences that discusses various aspects of the product and service experience",
+          "The customer service team was incredibly helpful and provided excellent support throughout the entire process"
+        ],
+        "expected": {
+          "count": 2,
+          "min_length": 17,
+          "max_length": 20
+        }
+      },
+      "mixed_responses": {
+        "responses": ["Good", "This is a longer response about the product", "Great", ""],
+        "expected": {
+          "count": 3,
+          "avg_length": 3.0
+        }
+      }
+    }
+  },
+  "edge_cases": {
+    "empty_and_null": [
+      "",
+      "   ",
+      null,
+      false
+    ],
+    "special_characters": [
+      "Great product! 🎉",
+      "Love it... @#$%",
+      "5/5 stars!!!",
+      "100% satisfied"
+    ],
+    "languages": [
+      "Excellent (English)",
+      "Excellent (French)",
+      "Excelente (Spanish)"
+    ],
+    "extreme_lengths": {
+      "very_short": "A",
+      "very_long": "This is an extremely long response that contains many words and goes on for quite a while discussing multiple aspects of the service and product quality in great detail with numerous examples and explanations that would be typical of a very engaged and detail-oriented customer providing comprehensive feedback about their experience with the company and its offerings and services..."
+    }
+  },
+  "rating_analysis": {
+    "description": "Sample ratings for testing rating distribution and average calculations",
+    "5_star_data": {
+      "responses": [5, 5, 5, 4, 5, 5, 4, 5, 5, 5],
+      "average": 4.8,
+      "distribution": {"5": 7, "4": 3}
+    },
+    "mixed_rating_data": {
+      "responses": [5, 4, 3, 2, 1, 5, 4, 3],
+      "average": 3.375,
+      "distribution": {"5": 2, "4": 2, "3": 2, "2": 1, "1": 1}
+    }
+  },
+  "usage_guide": {
+    "for_keyword_extraction_tests": "Use product_feedback, service_experience, and survey_responses",
+    "for_sentiment_analysis_tests": "Use sentiment_analysis_scenarios or the text_responses arrays",
+    "for_length_stats_tests": "Use length_stats_scenarios for expected value validation",
+    "for_numeric_tests": "Use ratings_5_point and numeric_scores arrays",
+    "for_multiple_choice_tests": "Use single_select and multiple_select from choice_responses",
+    "for_edge_case_testing": "Use the edge_cases section for robustness testing"
+  }
+}

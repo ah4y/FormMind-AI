@@ -165,3 +165,141 @@ class TestVersionAwareAnalytics:
 # 3. Expand the placeholder tests with real functionality
 # 4. Add tests for rating calculations and distribution
 # 5. Add tests for version-aware analytics filtering
+
+
+class TestRatingAnalytics:
+    """Tests for rating field statistics (1-5 star ratings)"""
+    
+    def test_rating_distribution(self):
+        """Test counting of rating distributions"""
+        answers = [
+            {'value': '5'},
+            {'value': '4'},
+            {'value': '5'},
+            {'value': '3'},
+            {'value': '5'}
+        ]
+        stats = choice_stats({}, answers)
+        assert stats['5'] == 3
+        assert stats['4'] == 1
+        assert stats['3'] == 1
+        
+        # Calculate average rating
+        total_rating = sum(int(k) * v for k, v in stats.items())
+        avg_rating = total_rating / sum(stats.values())
+        assert avg_rating == 4.4  # (5+4+5+3+5) / 5 = 22/5 = 4.4
+    
+    def test_rating_edge_cases(self):
+        """Test rating distribution with edge cases"""
+        answers = [{'value': '1'}, {'value': '5'}]
+        stats = choice_stats({}, answers)
+        assert len(stats) == 2
+        assert stats['1'] == 1
+        assert stats['5'] == 1
+
+
+class TestMultipleChoiceAnalytics:
+    """Tests for checkbox/multiple choice analytics"""
+    
+    def test_checkbox_overlap(self):
+        """Test overlapping selections in checkbox fields"""
+        answers = [
+            {'value': 'Python'},
+            {'value': 'Python,JavaScript'},
+            {'value': 'JavaScript'},
+            {'value': 'Python,JavaScript,Go'}
+        ]
+        stats = choice_stats({}, answers)
+        assert stats['Python'] == 3
+        assert stats['JavaScript'] == 3
+        assert stats['Go'] == 1
+    
+    def test_checkbox_with_spaces(self):
+        """Test handling of spaces in checkbox selections"""
+        answers = [
+            {'value': 'Option A, Option B'},
+            {'value': 'Option A'},
+            {'value': 'Option B, Option C'}
+        ]
+        stats = choice_stats({}, answers)
+        assert stats['Option A'] == 2
+        assert stats['Option B'] == 2
+        assert stats['Option C'] == 1
+
+
+class TestNumericAnomalies:
+    """Tests for edge cases in numeric data analysis"""
+    
+    def test_numeric_with_decimals(self):
+        """Test handling of decimal values"""
+        answers = [{'value': '3.14'}, {'value': '2.71'}, {'value': '1.41'}]
+        s = numeric_stats(answers)
+        assert s['count'] == 3
+        assert abs(s['average'] - 2.42) < 0.01
+    
+    def test_numeric_with_negative(self):
+        """Test negative number statistics"""
+        answers = [{'value': '-5'}, {'value': '10'}, {'value': '0'}]
+        s = numeric_stats(answers)
+        assert s['min'] == -5
+        assert s['max'] == 10
+        assert s['average'] == 5.0 / 3
+    
+    def test_numeric_single_value(self):
+        """Test numeric stats with single valid answer"""
+        answers = [{'value': '42'}]
+        s = numeric_stats(answers)
+        assert s['count'] == 1
+        assert s['min'] == 42
+        assert s['max'] == 42
+        assert s['average'] == 42
+
+
+class TestTextResponseAnalytics:
+    """Tests for text response collection and display"""
+    
+    def test_text_table_ordering(self):
+        """Test that text table returns newest responses first"""
+        answers = [{'value': f'Response {i}'} for i in range(1, 6)]
+        t = text_table(answers, limit=3)
+        assert t == ['Response 3', 'Response 4', 'Response 5']
+    
+    def test_text_table_mixed_content(self):
+        """Test text table with mixed empty and filled responses"""
+        answers = [
+            {'value': 'Good'},
+            {'value': ''},
+            {'value': 'Better'},
+            {'value': '   '},
+            {'value': 'Best'}
+        ]
+        t = text_table(answers, limit=10)
+        assert len(t) == 3
+        assert 'Good' in t
+        assert 'Better' in t
+        assert 'Best' in t
+
+
+class TestAnalyticsAggregation:
+    """Tests for combining multiple question analytics"""
+    
+    def test_combined_form_metrics(self):
+        """Test creating summary metrics across multiple questions"""
+        # Simulate analytics for a form with 3 questions
+        q1_stats = choice_stats({}, [{'value': 'A'}, {'value': 'A'}, {'value': 'B'}])
+        q2_stats = numeric_stats([{'value': '8'}, {'value': '9'}, {'value': '7'}])
+        q3_text = text_table([{'value': 'Feedback 1'}, {'value': 'Feedback 2'}])
+        
+        assert len(q1_stats) == 2
+        assert q2_stats['count'] == 3
+        assert len(q3_text) == 2
+    
+    def test_empty_form_response(self):
+        """Test handling of forms with no responses"""
+        stats = choice_stats({}, [])
+        metrics = numeric_stats([])
+        text = text_table([])
+        
+        assert stats == {}
+        assert metrics['count'] == 0
+        assert text == []
