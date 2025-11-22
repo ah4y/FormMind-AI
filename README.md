@@ -135,6 +135,13 @@ This project is designed as a 3-person student team effort:
 - Template system
 - Form-related tests
 
+### ✅ Teammate A — Phase 1 (Completed)
+
+- `tests/test_forms.py` created with initial test framework and placeholders
+- Basic helper logic exercised in `app/services/forms.py`
+- README and test instructions updated so `pytest` runs without DB
+
+
 ### 👨‍💻 **Teammate B** (Analytics & AI Insights)
 - Analytics dashboard
 - AI text processing
