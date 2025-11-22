@@ -14,9 +14,17 @@ def main():
     for tpl in tpls:
         meta_name = tpl.get("meta", {}).get("name") or f"Template {tpl['id']}"
         st.write(f"{tpl['id']} — {meta_name}")
-        if st.button(f"Create form from template {tpl['id']}", key=f"create-{tpl['id']}"):
+        cols = st.columns([1,1,4])
+        if cols[0].button(f"Create from {tpl['id']}", key=f"create-{tpl['id']}"):
             new = forms_service.create_from_template(tpl['id'], user_id=1)
             st.success(f"Created form {new['id']} from template {tpl['id']}")
+        if cols[1].button(f"Delete tpl {tpl['id']}", key=f"del-tpl-{tpl['id']}"):
+            try:
+                del forms_service._TEMPLATES[tpl['id']]
+                st.success(f"Deleted template {tpl['id']}")
+                st.experimental_rerun()
+            except Exception:
+                st.error("Could not delete template")
 
     st.subheader("Save current form as template")
     forms = forms_service.list_forms()

@@ -74,7 +74,14 @@ def add_question(form_id: int, question: Dict[str, Any]) -> Dict[str, Any]:
     if not form:
         raise KeyError("form not found")
     qid = question.get("id") or _next_qid()
+    # normalize keys: support 'text' and 'label'
     q = {**question, "id": qid}
+    if "label" in q and "text" not in q:
+        q["text"] = q.pop("label")
+    # ensure options are in normalized format (list of dicts)
+    opts = q.get("options")
+    if opts and all(isinstance(o, str) for o in opts):
+        q["options"] = [{"label": o, "value": o} for o in opts]
     form.setdefault("questions", []).append(q)
     return q
 
