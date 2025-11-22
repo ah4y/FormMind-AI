@@ -7,6 +7,11 @@ psycopg2-binary>=2.9.0
 pytest>=7.0.0
 pytest-cov>=4.0.0
 
+# Data processing and visualization
+pandas>=2.0.0
+plotly>=5.0.0
+altair>=5.0.0
+
 # Text processing for AI insights
 nltk>=3.8
 
