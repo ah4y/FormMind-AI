@@ -76,7 +76,7 @@ class Form(Base):
 
     # Relationships
     tenant = relationship("Tenant", back_populates="forms")
-    creator = relationship("User", foreign_keys=[created_by])
+    creator = relationship("User", foreign_keys=[created_by], overlaps="created_forms")
     versions = relationship("FormVersion", back_populates="form", cascade="all, delete-orphan")
     submissions = relationship("Submission", back_populates="form")
 
@@ -214,7 +214,7 @@ class Template(Base):
 
     # Relationships
     tenant = relationship("Tenant", back_populates="templates")
-    creator = relationship("User", foreign_keys=[created_by])
+    creator = relationship("User", foreign_keys=[created_by], overlaps="created_templates")
 
     # Indexes
     __table_args__ = (

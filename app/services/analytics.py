@@ -359,7 +359,7 @@ class AnalyticsService:
             row = [
                 submission.id,
                 submission.submitted_at.strftime('%Y-%m-%d %H:%M:%S'),
-                submission.submitted_by or 'Anonymous'
+                submission.user_id or 'Anonymous'
             ]
             
             # Get answers for this submission
@@ -399,7 +399,7 @@ class AnalyticsService:
             submission_data = {
                 'submission_id': submission.id,
                 'submitted_at': submission.submitted_at.isoformat(),
-                'submitted_by': submission.submitted_by,
+                'user_id': submission.user_id,
                 'answers': {}
             }
             
@@ -458,7 +458,7 @@ class AnalyticsService:
                     recent_activity.append({
                         'form_title': form.title if form else 'Unknown Form',
                         'submitted_at': sub.submitted_at,
-                        'submitter': 'Anonymous' if not sub.submitted_by else 'Registered User'
+                        'submitter': 'Anonymous' if sub.user_id is None else 'Registered User'
                     })
                 
                 return {
@@ -481,6 +481,74 @@ class AnalyticsService:
                 'active_forms': 0,
                 'recent_activity': []
             }
+    
+    @staticmethod
+    def get_form_analytics(form_id: int, user_id: int, user_role: str) -> Dict[str, Any]:
+        """Get analytics for a specific form"""
+        try:
+            with get_db_session() as session:
+                # Get form details
+                form = session.query(Form).filter(Form.id == form_id).first()
+                if not form:
+                    return {'error': 'Form not found'}
+                
+                # Check permissions
+                if not AnalyticsService._check_form_access(session, form, user_id, user_role):
+                    return {'error': 'Access denied'}
+                
+                # Get submission count
+                submission_count = session.query(Submission).filter(
+                    Submission.form_id == form_id
+                ).count()
+                
+                # Get response rate (if applicable)
+                total_answers = session.query(Answer).join(Submission).filter(
+                    Submission.form_id == form_id
+                ).count()
+                
+                return {
+                    'form_title': form.title,
+                    'submission_count': submission_count,
+                    'total_answers': total_answers,
+                    'status': form.status
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting form analytics for form {form_id}: {e}")
+            return {'error': 'Failed to get form analytics'}
+    
+    @staticmethod
+    def get_global_analytics(user_id: int, user_role: str) -> Dict[str, Any]:
+        """Get global analytics across all forms"""
+        try:
+            with get_db_session() as session:
+                # For now, return basic global stats
+                total_forms = session.query(Form).count()
+                total_submissions = session.query(Submission).count()
+                total_users = session.query(Form).count()  # Simplified
+                
+                return {
+                    'total_forms': total_forms,
+                    'total_submissions': total_submissions,
+                    'total_users': total_users
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting global analytics: {e}")
+            return {
+                'total_forms': 0,
+                'total_submissions': 0,
+                'total_users': 0
+            }
+    
+    @staticmethod
+    def _check_form_access(session, form: Form, user_id: int, user_role: str) -> bool:
+        """Check if user has access to view form analytics"""
+        if user_role in ['ADMIN', 'OWNER']:
+            return True
+        
+        # For other roles, check if user created the form
+        return form.created_by == user_id
 
 
 # Legacy helper functions for compatibility with existing tests

@@ -1,5 +1,14 @@
 """Analytics Dashboard - Phase 2 enhanced analytics page with charts and filters."""
 
+import sys
+import os
+from pathlib import Path
+
+# Ensure proper imports
+project_root = Path(__file__).parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go

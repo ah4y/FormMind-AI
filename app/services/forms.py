@@ -229,8 +229,43 @@ class FormsService:
             return None
     
     @staticmethod
+    def get_form_by_token(token: str) -> Optional[Dict[str, Any]]:
+        """Get form by public token for public access"""
+        try:
+            with get_db_session() as session:
+                form = session.query(Form).filter(Form.public_token == token).first()
+                
+                if not form:
+                    return None
+                
+                # Get active version
+                active_version = session.query(FormVersion).filter(
+                    and_(FormVersion.form_id == form.id, FormVersion.is_active == True)
+                ).first()
+                
+                return {
+                    'id': form.id,
+                    'title': form.title,
+                    'description': form.description,
+                    'status': form.status,
+                    'access_type': form.access_type,
+                    'single_submission': form.single_submission,
+                    'submission_start': form.submission_start,
+                    'submission_end': form.submission_end,
+                    'public_token': form.public_token,
+                    'created_by': form.created_by,
+                    'created_at': form.created_at,
+                    'version_id': active_version.id if active_version else None,
+                    'version_number': active_version.version_number if active_version else None
+                }
+                
+        except Exception as e:
+            logger.error(f"Error getting form by token {token}: {e}")
+            return None
+    
+    @staticmethod
     def update_form_settings(form_id: int, user_id: int, user_role: str, 
-                           **updates) -> bool:
+                           settings: Dict[str, Any]) -> bool:
         """Update form settings with access control"""
         try:
             with get_db_session() as session:
@@ -250,7 +285,7 @@ class FormsService:
                     'single_submission', 'submission_start', 'submission_end'
                 ]
                 
-                for field, value in updates.items():
+                for field, value in settings.items():
                     if field in allowed_fields:
                         setattr(form, field, value)
                 
@@ -283,6 +318,94 @@ class FormsService:
         except Exception as e:
             logger.error(f"Error deleting form {form_id}: {e}")
             return False
+    
+    @staticmethod
+    def duplicate_form(form_id: int, user_id: int, user_role: str, new_title: str = None) -> Optional[int]:
+        """Create a copy of an existing form with all its questions"""
+        try:
+            with get_db_session() as session:
+                # Get original form
+                original_form = session.query(Form).filter(Form.id == form_id).first()
+                
+                if not original_form:
+                    return None
+                
+                # Check read permissions for original form
+                form_dict = {'created_by': original_form.created_by}
+                if not role_can_view(user_role, user_id, form_dict):
+                    return None
+                
+                # Create new form with copied data
+                new_form_title = new_title or f"Copy of {original_form.title}"
+                
+                new_form = Form(
+                    tenant_id=original_form.tenant_id,
+                    title=new_form_title,
+                    description=original_form.description,
+                    status='draft',
+                    created_by=user_id,
+                    public_token=str(uuid.uuid4())
+                )
+                session.add(new_form)
+                session.flush()
+                
+                # Create new form version
+                new_version = FormVersion(
+                    form_id=new_form.id,
+                    version_number=1,
+                    is_active=True
+                )
+                session.add(new_version)
+                session.flush()
+                
+                # Copy questions from original form's active version
+                original_version = session.query(FormVersion).filter(
+                    FormVersion.form_id == form_id,
+                    FormVersion.is_active == True
+                ).first()
+                
+                if original_version:
+                    original_questions = session.query(Question).filter(
+                        Question.form_version_id == original_version.id
+                    ).order_by(Question.order_index).all()
+                    
+                    for orig_q in original_questions:
+                        new_question = Question(
+                            form_version_id=new_version.id,
+                            label=orig_q.label,
+                            placeholder=orig_q.placeholder,
+                            help_text=orig_q.help_text,
+                            field_type=orig_q.field_type,
+                            required=orig_q.required,
+                            default_value=orig_q.default_value,
+                            order_index=orig_q.order_index,
+                            validation_min=orig_q.validation_min,
+                            validation_max=orig_q.validation_max,
+                            validation_regex=orig_q.validation_regex
+                        )
+                        session.add(new_question)
+                        session.flush()
+                        
+                        # Copy question options if any
+                        original_options = session.query(QuestionOption).filter(
+                            QuestionOption.question_id == orig_q.id
+                        ).order_by(QuestionOption.order_index).all()
+                        
+                        for orig_option in original_options:
+                            new_option = QuestionOption(
+                                question_id=new_question.id,
+                                label=orig_option.label,
+                                value=orig_option.value,
+                                order_index=orig_option.order_index
+                            )
+                            session.add(new_option)
+                
+                logger.info(f"Duplicated form {form_id} as {new_form.id}")
+                return new_form.id
+                
+        except Exception as e:
+            logger.error(f"Error duplicating form {form_id}: {e}")
+            return None
 
 
 # Question management
@@ -436,6 +559,52 @@ class QuestionsService:
         except Exception as e:
             logger.error(f"Error creating new version for form {form_id}: {e}")
             return None
+    
+    @staticmethod
+    def get_questions_for_form(form_id: int) -> List[Dict[str, Any]]:
+        """Get all questions for a form (public access)"""
+        try:
+            with get_db_session() as session:
+                # Get active version
+                active_version = session.query(FormVersion).filter(
+                    and_(FormVersion.form_id == form_id, FormVersion.is_active == True)
+                ).first()
+                
+                if not active_version:
+                    return []
+                
+                # Get questions for active version
+                questions_query = session.query(Question).filter(
+                    Question.form_version_id == active_version.id
+                ).order_by(Question.order_index).all()
+                
+                questions = []
+                for question in questions_query:
+                    # Get options if applicable
+                    options = []
+                    if question.field_type in ['multiple_choice', 'checkboxes', 'dropdown']:
+                        options_query = session.query(QuestionOption).filter(
+                            QuestionOption.question_id == question.id
+                        ).order_by(QuestionOption.order_index).all()
+                        options = [opt.label for opt in options_query]
+                    
+                    questions.append({
+                        'id': question.id,
+                        'label': question.label,
+                        'placeholder': question.placeholder,
+                        'help_text': question.help_text,
+                        'field_type': question.field_type,
+                        'required': question.required,
+                        'default_value': question.default_value,
+                        'order_index': question.order_index,
+                        'options': options
+                    })
+                
+                return questions
+                
+        except Exception as e:
+            logger.error(f"Error getting questions for form {form_id}: {e}")
+            return []
 
 
 # Template operations

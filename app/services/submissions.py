@@ -44,13 +44,13 @@ class SubmissionsService:
                 
                 if user_id:
                     # For authenticated users, check by user_id
-                    existing = query.filter(Submission.submitted_by == user_id).first()
+                    existing = query.filter(Submission.user_id == user_id).first()
                     if existing:
                         return False, "You have already submitted this form"
                 
                 elif ip_address:
-                    # For anonymous users, check by IP address
-                    existing = query.filter(Submission.ip_address == ip_address).first()
+                    # For anonymous users, check by guest_token (IP address)
+                    existing = query.filter(Submission.guest_token == ip_address).first()
                     if existing:
                         return False, "A submission from this IP address already exists"
                 
@@ -138,7 +138,7 @@ class SubmissionsService:
     
     @staticmethod
     def submit_form(form_id: int, submission_data: Dict[str, Any], 
-                   submitted_by: Optional[int] = None, ip_address: Optional[str] = None) -> Tuple[bool, str, Optional[int]]:
+                   user_id: Optional[int] = None, ip_address: Optional[str] = None) -> Tuple[bool, str, Optional[int]]:
         """Submit form with full validation and rule enforcement"""
         try:
             with get_db_session() as session:
@@ -158,7 +158,7 @@ class SubmissionsService:
                 
                 # Check single submission rules
                 single_valid, single_message = SubmissionsService.check_single_submission_rule(
-                    form, submitted_by, ip_address
+                    form, user_id, ip_address
                 )
                 if not single_valid:
                     return False, single_message, None
@@ -182,7 +182,7 @@ class SubmissionsService:
                 submission = Submission(
                     form_id=form_id,
                     form_version_id=active_version.id,
-                    submitted_by=submitted_by,
+                    user_id=user_id,
                     ip_address=ip_address,
                     submitted_at=datetime.now()
                 )
@@ -244,8 +244,8 @@ class SubmissionsService:
                 for submission in submissions:
                     # Get submitter info if available
                     submitter_name = "Anonymous"
-                    if submission.submitted_by:
-                        user = session.query(User).filter(User.id == submission.submitted_by).first()
+                    if submission.user_id:
+                        user = session.query(User).filter(User.id == submission.user_id).first()
                         if user:
                             submitter_name = user.email
                     
@@ -262,8 +262,8 @@ class SubmissionsService:
                     result.append({
                         'id': submission.id,
                         'submitted_at': submission.submitted_at,
-                        'submitted_by': submitter_name,
-                        'ip_address': submission.ip_address,
+                        'user_id': submitter_name,
+                        'guest_token': submission.guest_token,
                         'answers': answer_data
                     })
                 
@@ -316,9 +316,9 @@ class SubmissionsService:
                     'id': submission.id,
                     'form_id': submission.form_id,
                     'submitted_at': submission.submitted_at,
-                    'submitted_by': submission.submitted_by,
-                    'ip_address': submission.ip_address,
-                    'answers': detailed_answers
+                    'user_id': submission.user_id,
+                    'guest_token': submission.guest_token,
+                    'answers': answers
                 }
                 
         except Exception as e:
@@ -385,6 +385,76 @@ class SubmissionsService:
                 
         except Exception as e:
             logger.error(f"Error getting form by token {public_token}: {e}")
+            return None
+    
+    @staticmethod
+    def create_submission(form_id: int, answers: Dict[int, Any], 
+                         user_id: Optional[int] = None, ip_address: Optional[str] = None) -> Optional[int]:
+        """Create a new form submission with answers"""
+        try:
+            with get_db_session() as session:
+                # Get form to validate
+                form = session.query(Form).filter(Form.id == form_id).first()
+                if not form:
+                    logger.error(f"Form {form_id} not found")
+                    return None
+                
+                # Check submission window
+                can_submit_time, time_msg = SubmissionsService.validate_submission_window(form)
+                if not can_submit_time:
+                    logger.error(f"Submission window check failed: {time_msg}")
+                    return None
+                
+                # Check single submission rule
+                can_submit_single, single_msg = SubmissionsService.check_single_submission_rule(
+                    form, user_id, ip_address
+                )
+                if not can_submit_single:
+                    logger.error(f"Single submission check failed: {single_msg}")
+                    return None
+                
+                # Get the active form version
+                active_version = session.query(FormVersion).filter(
+                    and_(FormVersion.form_id == form_id, FormVersion.is_active == True)
+                ).first()
+                
+                if not active_version:
+                    logger.error(f"No active version found for form {form_id}")
+                    return None
+                
+                # Create submission record
+                submission = Submission(
+                    form_id=form_id,
+                    form_version_id=active_version.id,
+                    user_id=user_id,
+                    guest_token=ip_address,  # Use guest_token field for IP tracking
+                    submitted_at=datetime.now()
+                )
+                session.add(submission)
+                session.flush()  # Get submission ID
+                
+                # Create answer records
+                for question_id, answer_value in answers.items():
+                    if answer_value is not None and answer_value != "":
+                        # Convert answer to string for storage
+                        if isinstance(answer_value, (list, tuple)):
+                            answer_text = ", ".join(str(v) for v in answer_value)
+                        else:
+                            answer_text = str(answer_value)
+                        
+                        answer = Answer(
+                            submission_id=submission.id,
+                            question_id=question_id,
+                            value=answer_text
+                        )
+                        session.add(answer)
+                
+                session.commit()
+                logger.info(f"Created submission {submission.id} for form {form_id}")
+                return submission.id
+                
+        except Exception as e:
+            logger.error(f"Error creating submission for form {form_id}: {e}")
             return None
 
 
