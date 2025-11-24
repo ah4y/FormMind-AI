@@ -88,7 +88,7 @@ def show_login():
             help="Demo accounts for different roles and tenants"
         )
         
-        if st.button("🔑 Sign In", type="primary"):
+        if st.button("🔑 Sign In", type="primary", key="signin_button"):
             # Extract email from the display string
             actual_email = email.split(' (')[0]
             user = login(actual_email)
@@ -115,7 +115,7 @@ def show_public_form_access():
     
     token = st.text_input("Enter Form Token", help="Get this link from the form creator")
     
-    if st.button("Access Form") and token:
+    if st.button("Access Form", key="access_form_button") and token:
         # This would typically validate the token and load the form
         st.success(f"Loading form with token: {token}")
         st.session_state['public_token'] = token
@@ -133,20 +133,20 @@ def show_dashboard(user: Dict[str, Any]):
     # Action buttons
     col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
     with col1:
-        if st.button("➕ Create New Form", type="primary"):
+        if st.button("➕ Create New Form", type="primary", key="create_new_button"):
             st.session_state.current_page = 'create_form'
             st.session_state.form_builder_questions = []
             st.rerun()
     with col2:
-        if st.button("📊 Analytics"):
+        if st.button("📊 Analytics", key="dashboard_analytics_button"):
             st.session_state.current_page = 'analytics'
             st.rerun()
     with col3:
-        if st.button("📋 Templates"):
+        if st.button("📋 Templates", key="dashboard_templates_button"):
             st.session_state.current_page = 'templates'
             st.rerun()
     with col4:
-        st.button("🔄 Refresh")
+        st.button("🔄 Refresh", key="refresh_button")
     
     st.divider()
     
@@ -383,7 +383,7 @@ def show_fill_form(token: str):
                         st.error("❌ Failed to submit response. Please try again.")
         
         # Back to home button
-        if st.button("🏠 Back to Home"):
+        if st.button("🏠 Back to Home", key="back_home_button"):
             if 'public_token' in st.session_state:
                 del st.session_state['public_token']
             st.session_state['current_page'] = 'dashboard'
@@ -435,7 +435,7 @@ def main():
         st.divider()
         
         # Navigation menu
-        if st.button("🏠 Dashboard"):
+        if st.button("🏠 Dashboard", key="sidebar_dashboard"):
             st.session_state.current_page = 'dashboard'
             st.rerun()
         
@@ -455,7 +455,7 @@ def main():
         st.write(f"**Role:** {user['role']}")
         st.write(f"**Tenant:** {user['tenant_name']}")
         
-        if st.button("🚪 Sign Out"):
+        if st.button("🚪 Sign Out", key="signout_button"):
             st.session_state.clear()
             st.rerun()
     
@@ -605,7 +605,7 @@ def show_form_builder(user: Dict[str, Any], form_id: Optional[int] = None):
     # Add question button
     col1, col2, col3 = st.columns([2, 1, 1])
     with col1:
-        if st.button("➕ Add Question", type="primary"):
+        if st.button("➕ Add Question", type="primary", key="add_question_button"):
             new_question = {
                 "id": len(questions) + 1,
                 "type": "short_text",
@@ -620,7 +620,7 @@ def show_form_builder(user: Dict[str, Any], form_id: Optional[int] = None):
             st.rerun()
     
     with col2:
-        if st.button("📋 Add from Template"):
+        if st.button("📋 Add from Template", key="add_template_button"):
             # Show template selection popup
             st.session_state.show_template_popup = not st.session_state.get('show_template_popup', False)
     
@@ -658,7 +658,7 @@ def show_form_builder(user: Dict[str, Any], form_id: Optional[int] = None):
                         st.write(f"   Options: {', '.join(q['options'][:3])}{'...' if len(q['options']) > 3 else ''}")
         
         with col_add:
-            if st.button("✅ Add Questions", type="primary"):
+            if st.button("✅ Add Questions", type="primary", key="add_questions_modal_button"):
                 if selected_template:
                     template_questions = get_template_questions(selected_template)
                     current_questions = st.session_state.form_builder_questions
@@ -682,13 +682,13 @@ def show_form_builder(user: Dict[str, Any], form_id: Optional[int] = None):
                     st.success(f"Added {len(template_questions)} questions from {template_options[selected_template]}!")
                     st.rerun()
             
-            if st.button("❌ Cancel"):
+            if st.button("❌ Cancel", key="cancel_modal_button"):
                 st.session_state.show_template_popup = False
                 st.rerun()
     
     with col3:
         if len(questions) > 0:
-            if st.button("🗑️ Clear All"):
+            if st.button("🗑️ Clear All", key="clear_all_button"):
                 if st.session_state.get('confirm_clear_all'):
                     st.session_state.form_builder_questions = []
                     st.session_state.confirm_clear_all = False
@@ -909,7 +909,7 @@ def show_form_builder(user: Dict[str, Any], form_id: Optional[int] = None):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("💾 Save as Draft", type="secondary", use_container_width=True):
+        if st.button("💾 Save as Draft", type="secondary", use_container_width=True, key="save_draft_button"):
             if form_title and questions:
                 try:
                     # Create form in database
@@ -949,7 +949,7 @@ def show_form_builder(user: Dict[str, Any], form_id: Optional[int] = None):
                 st.error("Please add a title and at least one question")
     
     with col2:
-        if st.button("🚀 Publish Form", type="primary", use_container_width=True):
+        if st.button("🚀 Publish Form", type="primary", use_container_width=True, key="publish_button"):
             if form_title and questions:
                 try:
                     # Create and publish form in database
@@ -1005,7 +1005,7 @@ def show_form_builder(user: Dict[str, Any], form_id: Optional[int] = None):
                 st.error("Please add a title and at least one question")
     
     with col3:
-        if st.button("📋 Save as Template", use_container_width=True):
+        if st.button("📋 Save as Template", use_container_width=True, key="save_template_button"):
             if form_title and questions:
                 # Template details input
                 with st.form("template_form"):
