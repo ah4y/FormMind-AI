@@ -104,7 +104,25 @@ class FormsService:
                 
         except Exception as e:
             logger.error(f"Error getting forms for user {user_id}: {e}")
-            return []
+            # Fallback: return in-memory forms if database is unavailable
+            result = []
+            for form_id, form_data in _IN_MEMORY_FORMS.items():
+                if form_data.get('created_by') == user_id:
+                    result.append({
+                        'id': form_id,
+                        'title': form_data.get('title'),
+                        'description': form_data.get('description'),
+                        'status': form_data.get('status'),
+                        'access_type': form_data.get('access_type'),
+                        'single_submission': form_data.get('single_submission'),
+                        'submission_start': form_data.get('submission_start'),
+                        'submission_end': form_data.get('submission_end'),
+                        'public_token': form_data.get('public_token'),
+                        'created_by': form_data.get('created_by'),
+                        'created_at': form_data.get('created_at'),
+                        'submission_count': 0
+                    })
+            return result
     
     @staticmethod
     def create_form(title: str, description: str, created_by: int, tenant_id: int, 
