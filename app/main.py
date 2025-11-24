@@ -435,15 +435,15 @@ def main():
         st.divider()
         
         # Navigation menu
-        if st.button("🏠 Dashboard", width="stretch"):
+        if st.button("🏠 Dashboard"):
             st.session_state.current_page = 'dashboard'
             st.rerun()
         
-        if st.button("📊 Analytics", width="stretch"):
+        if st.button("📊 Analytics"):
             st.session_state.current_page = 'analytics'
             st.rerun()
         
-        if st.button("📋 Templates", width="stretch"):
+        if st.button("📋 Templates"):
             st.session_state.current_page = 'templates'
             st.rerun()
         
@@ -455,7 +455,7 @@ def main():
         st.write(f"**Role:** {user['role']}")
         st.write(f"**Tenant:** {user['tenant_name']}")
         
-        if st.button("🚪 Sign Out", width="stretch"):
+        if st.button("🚪 Sign Out"):
             st.session_state.clear()
             st.rerun()
     
@@ -1096,14 +1096,14 @@ def show_form_filler(user: Optional[Dict[str, Any]]):
     
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("📤 Submit Response", type="primary", width="stretch"):
+        if st.button("📤 Submit Response", type="primary"):
             if name and email and rating:
                 st.success("✅ Thank you! Your response has been submitted.")
             else:
                 st.error("Please fill in all required fields (marked with *)")
     
     with col2:
-        if st.button("🔄 Clear Form", width="stretch"):
+        if st.button("🔄 Clear Form"):
             st.rerun()
 
 def show_form_analytics(user: Dict[str, Any]):
