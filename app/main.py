@@ -215,7 +215,7 @@ def show_dashboard(user: Dict[str, Any]):
                     if st.button("🔗 Share", key=f"share_{form['id']}"):
                         if form['status'] == 'published':
                             token = form['public_token']
-                            full_url = f"http://localhost:8505?token={token}"
+                            full_url = f"http://localhost:8501?token={token}"
                             st.success("📋 Public Link (Click to copy)")
                             st.code(full_url, language=None)
                             st.caption("Share this link with anyone to collect responses!")
@@ -471,7 +471,7 @@ def main():
     elif page == 'view_form':
         show_form_viewer(user)
     elif page == 'fill_form':
-        show_form_filler(user if 'user' in st.session_state else None)
+        show_fill_form(st.session_state.get('public_token'))
     elif page == 'form_analytics':
         show_form_analytics(user)
     elif page == 'analytics':
