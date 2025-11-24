@@ -270,7 +270,32 @@ class FormsService:
                 }
                 
         except Exception as e:
-            logger.error(f"Error getting form {form_id}: {e}")
+            logger.error(f"Error getting form {form_id} (trying in-memory fallback): {e}")
+            # Fallback: retrieve from in-memory storage
+            if form_id in _IN_MEMORY_FORMS:
+                form_data = _IN_MEMORY_FORMS[form_id]
+                # Get questions from in-memory storage
+                questions = []
+                if form_id in _IN_MEMORY_QUESTIONS:
+                    for q_id in sorted(_IN_MEMORY_QUESTIONS[form_id].keys()):
+                        questions.append(_IN_MEMORY_QUESTIONS[form_id][q_id])
+                
+                return {
+                    'id': form_data.get('id'),
+                    'title': form_data.get('title'),
+                    'description': form_data.get('description'),
+                    'status': form_data.get('status'),
+                    'access_type': form_data.get('access_type'),
+                    'single_submission': form_data.get('single_submission'),
+                    'submission_start': form_data.get('submission_start'),
+                    'submission_end': form_data.get('submission_end'),
+                    'public_token': form_data.get('public_token'),
+                    'created_by': form_data.get('created_by'),
+                    'created_at': form_data.get('created_at'),
+                    'version_id': form_data.get('version_id'),
+                    'version_number': form_data.get('version_number'),
+                    'questions': questions
+                }
             return None
     
     @staticmethod
@@ -305,7 +330,25 @@ class FormsService:
                 }
                 
         except Exception as e:
-            logger.error(f"Error getting form by token {token}: {e}")
+            logger.error(f"Error getting form by token {token} (trying in-memory fallback): {e}")
+            # Fallback: search in-memory forms by token
+            for form_id, form_data in _IN_MEMORY_FORMS.items():
+                if form_data.get('public_token') == token:
+                    return {
+                        'id': form_id,
+                        'title': form_data.get('title'),
+                        'description': form_data.get('description'),
+                        'status': form_data.get('status'),
+                        'access_type': form_data.get('access_type'),
+                        'single_submission': form_data.get('single_submission'),
+                        'submission_start': form_data.get('submission_start'),
+                        'submission_end': form_data.get('submission_end'),
+                        'public_token': form_data.get('public_token'),
+                        'created_by': form_data.get('created_by'),
+                        'created_at': form_data.get('created_at'),
+                        'version_id': form_data.get('version_id'),
+                        'version_number': form_data.get('version_number')
+                    }
             return None
     
     @staticmethod
