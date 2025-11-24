@@ -1049,22 +1049,45 @@ def show_form_viewer(user: Dict[str, Any]):
     form_id = st.session_state.current_form_id
     st.info(f"Viewing details for Form ID: {form_id}")
     
-    # Here you would fetch form details from database
-    # For now, showing placeholder
+    # Fetch actual form data from database
+    forms_service = FormsService()
+    form = forms_service.get_form_by_id(form_id, user['id'], user['role'])
+    
+    if not form:
+        st.error("❌ Form not found or you don't have permission to view it.")
+        return
+    
+    # Check if user is the owner (access control)
+    if form['created_by'] != user['id'] and user['role'] != 'ADMIN':
+        st.error("❌ You don't have permission to view this form. Only the form creator can view details.")
+        return
+    
     st.subheader("📋 Form Information")
     
     col1, col2 = st.columns(2)
     with col1:
-        st.write("**Title:** Customer Feedback Survey")
-        st.write("**Status:** Published")
-        st.write("**Created:** 2024-11-01")
-        st.write("**Total Submissions:** 25")
+        st.write(f"**Title:** {form['title']}")
+        st.write(f"**Status:** {form['status'].capitalize()}")
+        created_date = form['created_at'].strftime("%Y-%m-%d") if form.get('created_at') else "N/A"
+        st.write(f"**Created:** {created_date}")
+        st.write(f"**Total Questions:** {len(form.get('questions', []))}")
     
     with col2:
-        st.write("**Access:** Public")
-        st.write("**Single Submission:** Yes")
-        st.write("**Start Date:** None")
-        st.write("**End Date:** None")
+        st.write(f"**Access:** {form['access_type'].capitalize()}")
+        st.write(f"**Single Submission:** {'Yes' if form['single_submission'] else 'No'}")
+        start_date = form['submission_start'].strftime("%Y-%m-%d") if form.get('submission_start') else "None"
+        st.write(f"**Start Date:** {start_date}")
+        end_date = form['submission_end'].strftime("%Y-%m-%d") if form.get('submission_end') else "None"
+        st.write(f"**End Date:** {end_date}")
+    
+    st.divider()
+    
+    # Edit button with access control
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        if st.button("✏️ Edit Form", key="edit_form_viewer_btn"):
+            st.session_state.current_page = 'edit_form'
+            st.rerun()
 
 def show_form_filler(user: Optional[Dict[str, Any]]):
     """Fill out a form (public or authenticated)"""
